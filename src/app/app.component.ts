@@ -1,32 +1,205 @@
 import { Component } from '@angular/core';
 
+export interface IProduct {
+  _id: string;
+  name: string;
+  price: number;
+  imageUrl: string;
+  categoryId: string;
+}
+
+class OrderItem {
+  constructor(
+    public product: IProduct,
+    public quantity: number,
+    public purchasePrice: number
+  ) { }
+}
+
+interface ICartItemsMap {
+  [productId: string]: OrderItem;
+}
+
+const CARTITEMS = 'cartItems';
+
+const items: OrderItem[] = [
+  {
+    product: {
+      _id: '1',
+      categoryId: '1',
+      imageUrl: 'http://placeimg.com/128/128/animals',
+      name: 'One',
+      price: 0,
+    },
+    quantity: 1,
+    purchasePrice: 0,
+  },
+  {
+    product: {
+      _id: '2',
+      categoryId: '1',
+      imageUrl: 'http://placeimg.com/128/128/nature',
+      name: 'Two',
+      price: 0,
+    },
+    quantity: 1,
+    purchasePrice: 0,
+  },
+  {
+    product: {
+      _id: '3',
+      categoryId: '1',
+      imageUrl: 'http://placeimg.com/128/128/tech',
+      name: 'Three',
+      price: 0,
+    },
+    quantity: 1,
+    purchasePrice: 0,
+  },
+];
+
 @Component({
   selector: 'app-root',
   template: `
-    <!--The content below is only a placeholder and can be replaced.-->
-    <div style="text-align:center" class="content">
-      <h1>
-        Welcome to {{title}}!
-      </h1>
-      <span style="display: block">{{ title }} app is running!</span>
-      <img width="300" alt="Angular Logo" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNTAgMjUwIj4KICAgIDxwYXRoIGZpbGw9IiNERDAwMzEiIGQ9Ik0xMjUgMzBMMzEuOSA2My4ybDE0LjIgMTIzLjFMMTI1IDIzMGw3OC45LTQzLjcgMTQuMi0xMjMuMXoiIC8+CiAgICA8cGF0aCBmaWxsPSIjQzMwMDJGIiBkPSJNMTI1IDMwdjIyLjItLjFWMjMwbDc4LjktNDMuNyAxNC4yLTEyMy4xTDEyNSAzMHoiIC8+CiAgICA8cGF0aCAgZmlsbD0iI0ZGRkZGRiIgZD0iTTEyNSA1Mi4xTDY2LjggMTgyLjZoMjEuN2wxMS43LTI5LjJoNDkuNGwxMS43IDI5LjJIMTgzTDEyNSA1Mi4xem0xNyA4My4zaC0zNGwxNy00MC45IDE3IDQwLjl6IiAvPgogIDwvc3ZnPg==">
-    </div>
-    <h2>Here are some links to help you start: </h2>
-    <ul>
-      <li>
-        <h2><a target="_blank" rel="noopener" href="https://angular.io/tutorial">Tour of Heroes</a></h2>
-      </li>
-      <li>
-        <h2><a target="_blank" rel="noopener" href="https://angular.io/cli">CLI Documentation</a></h2>
-      </li>
-      <li>
-        <h2><a target="_blank" rel="noopener" href="https://blog.angular.io/">Angular blog</a></h2>
-      </li>
-    </ul>
-    
+    <form>
+      <mat-card *ngFor="let item of getAllItems()">
+          <mat-card-header>
+              <mat-card-title>{{item.product.name}}</mat-card-title>
+              <mat-card-subtitle>{{item.product.price | currency}}</mat-card-subtitle>
+              <img mat-card-avatar [src]="item.product.imageUrl" [alt]="item.product.name">
+          </mat-card-header>
+          <mat-card-content>
+              <mat-form-field appearance="outline">
+                  <mat-label>Quantity</mat-label>
+                  <button mat-icon-button matPrefix type="button">
+                      <mat-icon>remove_circle</mat-icon>
+                  </button>
+                  <input matInput type="number" [name]="item.product._id" [value]="item.quantity" min="1">
+                  <button mat-icon-button matSuffix type="button" (click)="setItem(item.product, item.quantity + 1)">
+                      <mat-icon>add_circle</mat-icon>
+                  </button>
+              </mat-form-field>
+          </mat-card-content>
+          <mat-card-actions>
+              <button mat-icon-button color="warn">
+                  <mat-icon>remove_shopping_cart</mat-icon>
+              </button>
+          </mat-card-actions>
+      </mat-card>
+      <mat-divider></mat-divider>
+      <h2>Cart Total: {{getTotalPrice() | currency}}</h2>
+      <div>
+          <button type="submit">
+              Check Out
+          </button>
+          <button type="reset">
+              <mat-icon>remove_shopping_cart</mat-icon>
+          </button>
+      </div>
+    </form>
   `,
-  styles: []
+  styles: [
+    `mat-card { margin: 1rem 0; }`,
+    `mat-card-content mat-form-field input { text-align: center; }`,
+    `mat-card-content mat-form-field .mat-form-field-infix { width: unset; }`,
+    `mat-card-actions { display: flex; justify-content: center; }`,
+    `mat-card-content >>> .mat-form-field-infix { width: unset; }`,
+  ],
 })
 export class AppComponent {
-  title = 'mat-blink';
+  constructor() {
+    this.validateStoredCart();
+    if (this.isEmpty()) {
+      items.forEach((item) => this.setItem(item.product, item.quantity));
+    }
+  }
+
+  getAllItems(): Array<OrderItem> {
+    return Object.values(this.getCartItemsMap());
+  }
+
+  getTotalQuantity(): number {
+    return this.getTotal((item) => item.quantity);
+  }
+
+  getTotalPrice(): number {
+    return this.getTotal((item) => item.quantity * item.purchasePrice);
+  }
+
+  setItem(product: IProduct, quantity: number): void {
+    const map = this.getCartItemsMap();
+    if (quantity > 0) {
+      map[product._id] = new OrderItem(product, quantity, product.price);
+    } else {
+      delete map[product._id];
+    }
+    this.setCartItemsMap(map);
+  }
+
+  empty(): void {
+    this.setCartItemsMap({});
+  }
+
+  isEmpty(): boolean {
+    return this.getTotal((item) => 1) === 0;
+  }
+
+  private getTotal(selectTerm: (item: OrderItem) => number): number {
+    return Object.values(this.getCartItemsMap())
+      .map(selectTerm)
+      .reduce((total, term) => total + term, 0);
+  }
+
+  private getCartItemsMap(): ICartItemsMap {
+    return JSON.parse(localStorage.getItem(CARTITEMS) || '{}');
+  }
+
+  private setCartItemsMap(map: ICartItemsMap): void {
+    localStorage.setItem(CARTITEMS, JSON.stringify(map));
+  }
+
+  /**
+   * Validate localStorage.cartItems; delete it if it doesn't conform to the expected structure.
+   */
+  private validateStoredCart(): void {
+    const mapJson = localStorage.getItem(CARTITEMS);
+    // tslint:disable-next-line: label-position
+    test: {
+      if (typeof mapJson === 'string') {
+        const map = JSON.parse(mapJson);
+        if (
+          map &&
+          typeof map === 'object' &&
+          Object.getPrototypeOf(map) === Object.prototype
+        ) {
+          const items: Array<OrderItem> = Object.values(map);
+          try {
+            if (
+              items.some(
+                ({
+                  product: { _id, name, price, imageUrl },
+                  quantity,
+                }) =>
+                  typeof _id !== 'string' ||
+                  typeof name !== 'string' ||
+                  typeof price !== 'number' ||
+                  typeof imageUrl !== 'string' ||
+                  typeof quantity !== 'number'
+              )
+            ) {
+              break test;
+            }
+          } catch (err) {
+            break test;
+          }
+        } else {
+          break test;
+        }
+      }
+      return;
+    }
+    if (mapJson) {
+      localStorage.removeItem(CARTITEMS);
+    }
+  }
 }
