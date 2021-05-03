@@ -1,6 +1,6 @@
 import { Component } from '@angular/core';
 
-export interface IProduct {
+interface IProduct {
   _id: string;
   name: string;
   price: number;
@@ -71,7 +71,7 @@ const items: OrderItem[] = [
           <mat-card-content>
               <mat-form-field appearance="outline">
                   <mat-label>Quantity</mat-label>
-                  <button mat-icon-button matPrefix type="button">
+                  <button mat-icon-button matPrefix type="button" (click)="item.quantity > 1 && setItem(item.product, item.quantity - 1)">
                       <mat-icon>remove_circle</mat-icon>
                   </button>
                   <input matInput type="number" [name]="item.product._id" [value]="item.quantity" min="1">
