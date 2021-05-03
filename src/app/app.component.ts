@@ -29,10 +29,10 @@ const items: OrderItem[] = [
       categoryId: '1',
       imageUrl: 'http://placeimg.com/128/128/animals',
       name: 'One',
-      price: 0,
+      price: 100,
     },
     quantity: 1,
-    purchasePrice: 0,
+    purchasePrice: 100,
   },
   {
     product: {
@@ -40,7 +40,7 @@ const items: OrderItem[] = [
       categoryId: '1',
       imageUrl: 'http://placeimg.com/128/128/nature',
       name: 'Two',
-      price: 0,
+      price: 200,
     },
     quantity: 1,
     purchasePrice: 0,
@@ -51,7 +51,7 @@ const items: OrderItem[] = [
       categoryId: '1',
       imageUrl: 'http://placeimg.com/128/128/tech',
       name: 'Three',
-      price: 0,
+      price: 300,
     },
     quantity: 1,
     purchasePrice: 0,
@@ -92,7 +92,7 @@ const items: OrderItem[] = [
           <button type="submit">
               Check Out
           </button>
-          <button type="reset">
+          <button type="reset" (click)="empty()">
               <mat-icon>remove_shopping_cart</mat-icon>
           </button>
       </div>
@@ -137,7 +137,9 @@ export class AppComponent {
   }
 
   empty(): void {
-    this.setCartItemsMap({});
+    if (confirm('Remove all items from the cart?')) {
+      this.setCartItemsMap({});
+    }
   }
 
   isEmpty(): boolean {
