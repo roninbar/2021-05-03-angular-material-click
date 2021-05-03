@@ -62,7 +62,7 @@ const items: OrderItem[] = [
   selector: 'app-root',
   template: `
     <form>
-      <mat-card *ngFor="let item of getAllItems()">
+      <mat-card *ngFor="let item of getAllItems(); trackBy: productIdOfCartItem">
           <mat-card-header>
               <mat-card-title>{{item.product.name}}</mat-card-title>
               <mat-card-subtitle>{{item.product.price | currency}}</mat-card-subtitle>
@@ -74,7 +74,7 @@ const items: OrderItem[] = [
                   <button mat-icon-button matPrefix type="button" (click)="item.quantity > 1 && setItem(item.product, item.quantity - 1)">
                       <mat-icon>remove_circle</mat-icon>
                   </button>
-                  <input matInput type="number" [name]="item.product._id" [value]="item.quantity" min="1">
+                  <input matInput type="number" [name]="item.product._id" [value]="item.quantity" min="1" readonly>
                   <button mat-icon-button matSuffix type="button" (click)="setItem(item.product, item.quantity + 1)">
                       <mat-icon>add_circle</mat-icon>
                   </button>
@@ -103,15 +103,24 @@ const items: OrderItem[] = [
     `mat-card-content mat-form-field input { text-align: center; }`,
     `mat-card-content mat-form-field .mat-form-field-infix { width: unset; }`,
     `mat-card-actions { display: flex; justify-content: center; }`,
+    `mat-form-field input::-webkit-outer-spin-button,
+    mat-form-field input::-webkit-inner-spin-button {
+      display: none;
+    }`,
     `mat-card-content >>> .mat-form-field-infix { width: unset; }`,
   ],
 })
 export class AppComponent {
+
   constructor() {
     this.validateStoredCart();
     if (this.isEmpty()) {
       items.forEach((item) => this.setItem(item.product, item.quantity));
     }
+  }
+
+  public productIdOfCartItem(index: number, item: OrderItem): string {
+    return item.product._id;
   }
 
   getAllItems(): Array<OrderItem> {
